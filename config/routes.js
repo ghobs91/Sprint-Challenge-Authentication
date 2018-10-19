@@ -19,8 +19,7 @@ function register(req, res) {
   db("users")
    .insert(credentials)
    .then(ids => {
-     const id = ids[0];
-     res.status(201).json({ newUserId: id });
+     res.status(201).json({ newUserId: ids[0] });
    })
    .catch(err => {
      res.status(500).json(err);
