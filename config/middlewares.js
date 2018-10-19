@@ -1,5 +1,4 @@
 const jwt = require('jsonwebtoken');
-
 const jwtKey = require('../_secrets/keys').jwtKey;
 
 // quickly see what this file exports
@@ -7,7 +6,8 @@ module.exports = {
   authenticate,
 };
 
-// implementation details
+
+// jwt authentication middleware implementation details
 function authenticate(req, res, next) {
   const token = req.get('Authorization');
 
