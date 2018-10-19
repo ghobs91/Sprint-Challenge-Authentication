@@ -11,10 +11,11 @@ module.exports = server => {
 
 
 function register(req, res) {
-  // implement user registration
+  
   const credentials = req.body;
   const hash = bcrypt.hashSync(credentials.password, 10);
   credentials.password = hash;
+
   db("users")
    .insert(credentials)
    .then(ids => {
@@ -27,7 +28,7 @@ function register(req, res) {
 }
 
 function login(req, res) {
-  // implement user login
+  
   const creds = req.body;
   db("users")
    .where({ username: creds.username })
@@ -37,7 +38,7 @@ function login(req, res) {
        const token = generateToken(user);
        res.status(200).json({ welcome: user.username, token });
      } else {
-       res.status(401).json({ message: "User not registered" });
+       res.status(401).json({ message: "User not found, please register first!" });
      }
    })
    .catch(err => {
