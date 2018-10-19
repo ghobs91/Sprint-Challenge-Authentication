@@ -1,6 +1,9 @@
-const axios = require('axios');
-const bcrypt = require('bcryptjs');
-const { authenticate } = require('./middlewares');
+const axios = require("axios");
+const bcrypt = require("bcryptjs");
+const { authenticate } = require("./middlewares");
+const jwtSecret = require("../_secrets/keys").jwtKey;
+const db = require("../database/dbConfig");
+const jwt = require("jsonwebtoken");
 
 module.exports = server => {
   server.post('/api/register', register);
@@ -9,52 +12,50 @@ module.exports = server => {
 };
 
 // jwt setup
-const jwtSecret = 'The mongoose flies at midnight';
 function generateToken(user) {
-const jwtPayload = {
-  ...user,
-};
-const jwtOptions = {
-  expiresIn: '1h',
-};
-  return jwt.sign(jwtPayload, jwtSecret, jwtOptions);
+  const jwtPayload = {
+    ...user,
+  };
+   const jwtOptions = {
+    expiresIn: '30m',
+  };
+  return jwt.sign(jwtPayload, jwtKey, jwtOptions);
 }
 
 function register(req, res) {
   // implement user registration
-  const credentials = req.body;
-  const hash = bcrypt.hashSync(credentials.password, 10);
+	const credentials = req.body;
+	const hash = bcrypt.hashSync(credentials.password, 15);
   credentials.password = hash;
-   db('users')
-    .insert(credentials)
-    .then(ids => {
-      res.status(201).json({ newUserId: ids[0] });
-    })
-    .catch(err => {
-      if (err.errno === 19) {
-        res.status(400).json({ error: 'Username taken.' });
-      } else {
-        res.status(500).json(err);
-      }
-    });
-  /////
+  
+	db("users")
+		.insert(credentials)
+		.then(ids => {
+			const token = generateToken({ username: credentials.username });
+			res.status(201).json({ ids: ids[0], token });
+		})
+		.catch(err => {
+			console.log(err);
+			res.status(500).json({ error: "Could not create User" });
+		});
 }
 
 function login(req, res) {
   // implement user login
-  const creds = req.body;
-   db('users')
-  .where({username: creds.username})
-  .first()
-  .then(user => {
-      if(user && bcrypt.compareSync(creds.password, user.password)) {
-          const token = generateToken(user);
-          res.status(200).json({ message: `User logged in: ${user.username}`, token });
-      } else {
-          res.status(401).json({ message: "You shall not pass!"});
-      }
-  })
-  .catch(err => res.status(500).json({err}));
+	const credentials = req.body;
+	db("users")
+		.where({ username: credentials.username })
+		.first()
+		.then(user => {
+			if (user && bcrypt.compareSync(credentials.password, user.password)) {
+				const token = generateToken(user);
+				res.status(200).json({ welcome: user.username, token });
+			} else {
+				res
+					.status(500)
+					.json({ error: "Login failed" });
+			}
+		});
 }
 
 function getJokes(req, res) {
